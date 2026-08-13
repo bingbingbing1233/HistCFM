@@ -98,6 +98,32 @@ See [real-data preparation](docs/data_preparation.md), the [input format](docs/i
 | `uni_index.json` | Canonical patch-key-to-row mapping |
 | `uni_features.npy` | Precomputed morphology-feature matrix |
 
+## External resources for real-data preparation
+
+HistCFM operates on preprocessed, cell-level inputs and precomputed histology features. The following external resources are used for preparing real datasets:
+
+- **GHIST preprocessing workflow:** [https://github.com/SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST)
+- **UNI foundation model:** [https://github.com/mahmoodlab/UNI](https://github.com/mahmoodlab/UNI)
+
+Users starting from raw Xenium data should follow the GHIST preprocessing workflow and then organize the resulting files according to the [HistCFM input specification](docs/input_format.md). Histology embeddings should be generated using an authorized local installation of UNI and converted to the precomputed feature format described in the [UNI feature guide](docs/uni_features.md).
+
+These external resources are not required for running the included synthetic smoke demo. GHIST source code, UNI source code, UNI model weights, and real-data UNI features are not redistributed in this repository.
+
+## Datasets used in this study
+
+All source datasets analyzed in the HistCFM study are publicly available from their original providers. The datasets themselves are not redistributed in this repository.
+
+| Dataset in the HistCFM study | Platform and source | Public access |
+|---|---|---|
+| **Breast Sample 1** | 10x Genomics Xenium FFPE Human Breast Cancer, Replicate 1 | [Dataset explorer](https://www.10xgenomics.com/products/xenium-in-situ/human-breast-dataset-explorer) · [Xenium output bundle](https://cf.10xgenomics.com/samples/xenium/1.0.1/Xenium_FFPE_Human_Breast_Cancer_Rep1/Xenium_FFPE_Human_Breast_Cancer_Rep1_outs.zip) |
+| **Breast Sample 2** | 10x Genomics Xenium V1 FFPE Preview Human Breast Cancer, Sample 2 | [Dataset explorer](https://www.10xgenomics.com/products/xenium-in-situ/human-breast-dataset-explorer) · [Xenium output bundle](https://cf.10xgenomics.com/samples/xenium/1.4.0/Xenium_V1_FFPE_Preview_Human_Breast_Cancer_Sample_2/Xenium_V1_FFPE_Preview_Human_Breast_Cancer_Sample_2_outs.zip) |
+| **Melanoma** | 10x Genomics Xenium Human Skin Preview dataset with the Human Skin Gene Expression Panel add-on | [Dataset page](https://www.10xgenomics.com/datasets/human-skin-preview-data-xenium-human-skin-gene-expression-panel-add-on-1-standard) |
+| **Human Breast Cancer (Visium)** | Constructed by combining Human Breast Cancer Block A, Sections 1 and 2 | [Section 1](https://www.10xgenomics.com/datasets/human-breast-cancer-block-a-section-1-1-standard-1-1-0) · [Section 2](https://www.10xgenomics.com/datasets/human-breast-cancer-block-a-section-2-1-standard-1-1-0) |
+
+For the Xenium datasets, HistCFM follows the cell-level preprocessing workflow used by [GHIST](https://github.com/SydneyBioX/GHIST). After preprocessing, the resulting files must be organized according to the [HistCFM input specification](docs/input_format.md). Precomputed histology features can be prepared using an authorized installation of [UNI](https://github.com/mahmoodlab/UNI), following the [UNI feature guide](docs/uni_features.md).
+
+The included synthetic demo is provided solely to verify the HistCFM software workflow and does not contain material derived from these biological datasets.
+
 ## Training
 
 Train from a strict YAML configuration and write artifacts to a new or empty directory:
@@ -166,3 +192,13 @@ The HistCFM citation will be updated when the accompanying manuscript is publish
 ## License and third-party components
 
 HistCFM is released under `GPL-3.0-only` and is derived in part from [SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST). The backbone provenance includes the earlier avBuffer/U-Net 3+ lineage; attribution, license context, modification notices, and source-chain uncertainty are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), [provenance](docs/provenance.md), and [licensing](docs/licensing.md). HistCFM does not distribute the UNI model or weights.
+
+## Acknowledgements
+
+HistCFM builds upon [GHIST](https://github.com/SydneyBioX/GHIST). We thank the GHIST authors for making their implementation publicly available.
+
+The histology backbone follows the U-Net 3+ implementation included in GHIST, which references [avBuffer/UNet3plus_pth](https://github.com/avBuffer/UNet3plus_pth). We acknowledge the authors of [U-Net 3+](https://github.com/ZJUGiveLab/UNet-Version) and its PyTorch implementation.
+
+We also thank the authors of [UNI](https://github.com/mahmoodlab/UNI) for the pretrained foundation model used to derive histology features in the HistCFM experiments.
+
+Users should obtain all external resources from their official repositories and comply with the corresponding access and licensing terms.
