@@ -1,0 +1,28 @@
+name: histcfm
+
+# Validated server stack: Linux x86-64 with an NVIDIA CUDA 12.1
+# driver/runtime.  PyTorch packages come from their official channels; the
+# remaining Python packages come from conda-forge.
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - setuptools>=64
+  - wheel
+  - pytorch=2.1.1
+  - torchvision=0.16.1
+  - pytorch-cuda=12.1
+  - numpy=1.26.4
+  - pandas
+  - scikit-learn
+  - pyyaml
+  - imageio
+  - tifffile
+  - natsort
+  - tqdm
+  - pillow
+  - pytest

@@ -1,0 +1,42 @@
+__pycache__/
+*.py[cod]
+
+.venv/
+venv/
+.env
+.env.*
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.mplconfig/
+.coverage
+coverage.xml
+htmlcov/
+
+build/
+dist/
+*.egg-info/
+
+runs/
+outputs/
+checkpoints/
+logs/
+normalization/
+/data/
+
+*.log
+*.pth
+*.pt
+*.ckpt
+histology_normalization.npy
+predictions.csv
+targets.csv
+metrics.json
+per_gene_metrics.csv
+cell_type_metrics.json
+
+# `cell_types.csv` can be either an input or an inference output. Runtime
+# directories above are ignored wholesale; the committed synthetic input at
+# examples/demo/data/cell_types.csv must remain tracked.
+/cell_types.csv

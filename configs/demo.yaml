@@ -1,0 +1,125 @@
+# Deterministic synthetic smoke-demo configuration. Run commands from the
+# repository root so these repository-relative paths resolve as documented.
+
+data:
+  histology_path: examples/demo/data/histology.tif
+  nucleus_mask_path: examples/demo/data/nucleus_mask.tif
+  matched_nuclei_path: examples/demo/data/matched_nuclei.csv
+  expression_path: examples/demo/data/expression.csv
+  cell_type_path: examples/demo/data/cell_types.csv
+  average_expression_path: null
+  genes:
+    - synthetic_gene_01
+    - synthetic_gene_02
+    - synthetic_gene_03
+    - synthetic_gene_04
+    - synthetic_gene_05
+    - synthetic_gene_06
+    - synthetic_gene_07
+    - synthetic_gene_08
+    - synthetic_gene_09
+    - synthetic_gene_10
+    - synthetic_gene_11
+    - synthetic_gene_12
+    - synthetic_gene_13
+    - synthetic_gene_14
+    - synthetic_gene_15
+    - synthetic_gene_16
+    - synthetic_gene_17
+    - synthetic_gene_18
+    - synthetic_gene_19
+    - synthetic_gene_20
+    - synthetic_gene_21
+    - synthetic_gene_22
+    - synthetic_gene_23
+    - synthetic_gene_24
+  cell_types:
+    - synthetic_type_a
+    - synthetic_type_b
+    - synthetic_type_c
+    - synthetic_type_d
+  validation_split: [0.0, 0.3333333333333333]
+  patch_height: 256
+  patch_width: 256
+  overlap: 32
+  max_cells_per_patch: 32
+  min_nucleus_area: 10
+  expression_scale: 5.0
+  normalization_path: null
+  stain_augmentation: false
+
+model:
+  embedding_dim: 32
+  use_cell_types: true
+  use_neighborhood: true
+  average_expression_compatibility: false
+
+flow:
+  hidden_dim: 64
+  num_layers: 2
+  k_neighbors: 4
+  inference_steps: 2
+  prior: gaussian
+  train_noise_std: 0.02
+  inference_noise_std: 0.05
+  target_noise_std: 0.001
+  warmup_epochs: 0
+
+uni:
+  enabled: true
+  mode: precomputed
+  index_path: examples/demo/data/uni/uni_index.json
+  features_path: examples/demo/data/uni/uni_features.npy
+  feature_dim: 1024
+  fusion_method: film
+  fusion_hidden_dim: 64
+  fusion_dropout: 0.0
+
+sonrm:
+  enabled: true
+  neighbors: 4
+  hops: 2
+  margin_12: 0.1
+  margin_23: 0.1
+
+loss:
+  segmentation: 1.0
+  histology_cell_type: 1.0
+  expression_cell_type: 1.0
+  endpoint_expression: 10.0
+  neighborhood_expression_immune: 10.0
+  neighborhood_expression_invasive: 10.0
+  expression_embedding: 100.0
+  expression_logits: 1.0
+  estimated_composition: 1.0
+  histology_composition: 1.0
+  uni_hint: 0.1
+  sonrm: 0.05
+
+training:
+  epochs: 1
+  batch_size: 1
+  workers: 0
+  shuffle: false
+  drop_last: false
+  optimizer: adamw
+  learning_rate: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  weight_decay: 0.0001
+  epsilon: 1.0e-8
+  learning_rate_schedule: linear
+  initial_learning_rate: 0.001
+  final_learning_rate: 1.0e-5
+  minimum_learning_rate: 1.0e-5
+  switch_ratio: 0.5
+  gradient_clip: 0.5
+  checkpoint_frequency: 1
+  save_optimizer: false
+  seed: 20260813
+
+runtime:
+  device: auto
+  gpu_index: 0
+  deterministic: true
+  overwrite_output: false
