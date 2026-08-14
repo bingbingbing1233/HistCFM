@@ -1,6 +1,6 @@
-# Formal HistCFM training template. This is intentionally incomplete and is
-# not demo data or a paper-results reproduction configuration. Replace every
-# null path and provide the exact ordered genes/cell types for your prepared data.
+# HistCFM training configuration template for user-provided datasets.
+# Fill all required input paths and provide the exact ordered genes and
+# cell types before training.
 
 data:
   histology_path: null                 # Required H x W x 3 aligned histology image.

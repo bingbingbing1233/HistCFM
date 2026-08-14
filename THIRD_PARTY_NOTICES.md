@@ -1,59 +1,80 @@
 # Third-party notices
 
-This inventory identifies material and external dependencies relevant to
-HistCFM. Attribution is not a substitute for a license or permission.
+This file records third-party attribution and external-resource boundaries for
+HistCFM. The repository-level software license is `GPL-3.0-only`; see
+[LICENSE](LICENSE). Detailed file provenance is in
+[docs/provenance.md](docs/provenance.md), and the licensing statement is in
+[docs/licensing.md](docs/licensing.md).
 
-## GHIST
+## SydneyBioX/GHIST
 
-- Official source: <https://github.com/SydneyBioX/GHIST>
-- Upstream license found: GNU General Public License, version 3
-- Relationship: HistCFM model, data, image-I/O, training, and inference paths
-  contain selected code modified/derived from GHIST. Source files identify the
-  upstream and release-side modifications.
-- Redistribution basis: the HistCFM author team elected to redistribute these
-  GHIST-derived components in reliance on the GNU GPL v3 published by the
-  official SydneyBioX/GHIST repository, while retaining attribution,
-  provenance, modification, license, and warranty notices.
-- Not included: GHIST's full repository, preprocessing scripts, tutorial data,
-  checkpoint, results, or Git history.
-- Citation: Fu et al., “Spatial gene expression at single-cell resolution from
-  histology using deep learning with GHIST,” *Nature Methods* 22, 1900–1910
-  (2025), <https://doi.org/10.1038/s41592-025-02795-z>.
+- Official repository: <https://github.com/SydneyBioX/GHIST>
+- Reference commit: `917456be305fc82e92293ea272812e79675e821c`
+- Published repository license: GNU General Public License, version 3
 
-## U-Net 3+ / UNet3+
+HistCFM contains selected model, data, image-I/O, training, and inference code
+derived from GHIST. The relevant HistCFM files identify GHIST and their
+modifications; the complete GHIST repository, Git history, preprocessing
+scripts, tutorial data, checkpoints, and results are not copied here.
 
-- Paper-linked implementation: <https://github.com/ZJUGiveLab/UNet-Version>
-- Direct source cited by GHIST's backbone:
+HistCFM obtained the relevant backbone code from the official GHIST repository
+and redistributes the GHIST-derived files, including HistCFM modifications,
+under GPL-3.0-only, consistent with the license published by GHIST. GHIST
+identifies the avBuffer U-Net 3+ implementation as an upstream source for its
+backbone. HistCFM preserves attribution to GHIST and the referenced upstream
+projects and does not claim original authorship of upstream code.
+
+Please cite:
+
+Fu et al., “Spatial gene expression at single-cell resolution from histology
+using deep learning with GHIST,” *Nature Methods* 22, 1900–1910 (2025),
+<https://doi.org/10.1038/s41592-025-02795-z>.
+
+## U-Net 3+ lineage
+
+- GHIST-referenced PyTorch implementation:
   <https://github.com/avBuffer/UNet3plus_pth>
-- Relationship: the direct source used for
-  `src/histcfm/models/backbone.py`, `layers.py`, and `initialization.py` is
-  official GHIST. GHIST cites avBuffer in its backbone; file comparison also
-  supports the documented probable relationship to the paper-linked U-Net 3+
-  implementation.
-- License finding: no explicit redistribution license was found in the
-  audited ZJUGiveLab or avBuffer repositories. GHIST's GPL file does not by
-  itself prove permission to relicense separately sourced code.
-- Status: the HistCFM author team has made the publication decision to rely on
-  official GHIST's GPL v3 for its direct GHIST copies. HistCFM has not obtained
-  and does not claim separate written authorization from avBuffer,
-  ZJUGiveLab, or another earlier UNet3+ implementation. The earlier source-
-  chain uncertainty remains disclosed; attribution is not represented as an
-  independent license or permission.
+- Paper-linked U-Net 3+ implementation:
+  <https://github.com/ZJUGiveLab/UNet-Version>
 
-## UNI
+The direct source used by HistCFM for the public backbone-family files is
+official GHIST. HistCFM retains attribution to GHIST, avBuffer, and U-Net 3+,
+and does not claim original authorship of the upstream code. HistCFM does not
+claim separate written authorization from avBuffer, ZJUGiveLab, or another
+earlier U-Net 3+ implementation. These notices do not constitute an independent
+legal review or legal guarantee.
 
-- Official source: <https://github.com/mahmoodlab/UNI>
-- Original UNI model access: <https://huggingface.co/MahmoodLab/uni>
-- Upstream terms: the official repository states CC BY-NC-ND 4.0 and gated
-  model-access conditions; users must review the current upstream text.
-- Relationship: real-data HistCFM can consume separately prepared original
-  UNI patch features through an offline JSON+NPY interface.
-- Not included: UNI source, encoder, weights, checkpoint, download code, or
-  real UNI-generated features.
-- Citation: Chen, R.J., Ding, T., Lu, M.Y., Williamson, D.F.K., et al.,
-  “Towards a general-purpose foundation model for computational pathology,”
-  *Nature Medicine* (2024), <https://doi.org/10.1038/s41591-024-02857-3>.
+## MahmoodLab/UNI
 
-The synthetic morphology-feature matrix under `examples/demo/data/` was
-generated without UNI or another model. Its formal filenames describe the
-HistCFM interface, not its provenance.
+- Official repository: <https://github.com/mahmoodlab/UNI>
+- Official model-access page: <https://huggingface.co/MahmoodLab/uni>
+
+UNI is an external resource used to prepare morphology features for the
+HistCFM experiments. Users must obtain authorized access from the official
+provider and comply with the applicable upstream terms. HistCFM does not
+redistribute UNI source code, encoder code, weights, checkpoints, download
+utilities, or real UNI-generated features.
+
+The committed synthetic demo contains interface-compatible synthetic
+morphology features generated without UNI or another model.
+
+Please cite:
+
+Chen, R.J., Ding, T., Lu, M.Y., Williamson, D.F.K., et al., “Towards a
+general-purpose foundation model for computational pathology,” *Nature
+Medicine* (2024), <https://doi.org/10.1038/s41591-024-02857-3>.
+
+## Public datasets
+
+The HistCFM study used publicly accessible 10x Genomics Xenium and Visium data.
+Their source pages are linked in the root [README](README.md#datasets-used-in-this-study).
+Those datasets are not copied into this repository and remain governed by the
+terms of their original provider.
+
+## Excluded external artifacts
+
+This repository does not contain real patient data, real expression matrices,
+real UNI-generated feature arrays, UNI or Hover-Net weights, paper HistCFM
+checkpoints, GHIST tutorial artifacts, private checkpoints, predictions,
+metrics, results, or server logs. External links are supplied for attribution
+and reproducibility and do not change the terms of the linked material.
