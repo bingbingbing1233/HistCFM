@@ -172,7 +172,7 @@ docs/              Detailed preparation and reproducibility guides
 
 ## Citation and archival record
 
-The HistCFM software release associated with this study is archived on Zenodo:
+Zenodo DOI for this software release:
 
 [https://doi.org/10.5281/zenodo.21936408](https://doi.org/10.5281/zenodo.21936408)
 
