@@ -3,7 +3,7 @@
 HistCFM should be installed in its own Conda environment named `histcfm`.
 Users do not need a historical GHIST environment. The independently created
 environment passed import/CUDA preflight, 75 tests, and the complete synthetic
-workflow on 2026-08-13. Its stack, declared in `environment.yml`, was:
+workflow on 2026-08-14. Its stack, declared in `environment.yml`, was:
 
 ```text
 Python 3.10.14
@@ -17,8 +17,8 @@ Linux x86-64 with an NVIDIA GPU and compatible driver
 This is evidence for one Linux/CUDA stack, not a claim that every server or
 dependency combination has been tested. The CUDA driver is managed by the
 server administrator and is not installed by this repository. The final
-`0.1.0` repeat completed successfully, and its schema-3 checkpoint and
-inference metadata both recorded package version `0.1.0`.
+`0.1.1` repeat completed successfully, and its schema-3 checkpoint and
+inference metadata both recorded package version `0.1.1`.
 
 ## Dependency audit
 

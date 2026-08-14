@@ -112,7 +112,7 @@ It writes a resolved configuration, normalization artifact, loss records, and
 schema-versioned checkpoints to a new or empty output directory.
 
 The validation split is enumerated and checked before training so held-out
-patches, labels, genes, and feature keys are valid. Version `0.1.0` does not run
+patches, labels, genes, and feature keys are valid. Version `0.1.1` does not run
 a validation forward pass, select a best epoch, or choose a checkpoint from
 validation metrics. Evaluation is a separate explicit workflow.
 
@@ -156,12 +156,12 @@ epoch or implement paper-specific figure and fold aggregation workflows.
   its current attention operation does not index or aggregate that graph;
   centroid coordinates still enter the learned key representation.
 
-These behaviors are part of the documented `0.1.0` implementation. Changing
+These behaviors are part of the documented `0.1.1` implementation. Changing
 them would require an explicit model revision and renewed numerical validation.
 
 ## Validation status and scope
 
-HistCFM `0.1.0` passed all 75 automated tests and the complete committed
+HistCFM `0.1.1` passed all 75 automated tests and the complete committed
 synthetic validate/train/checkpoint/infer/evaluate workflow in the independent
 Linux/CUDA environment documented in [server_validation.md](server_validation.md).
 That run covered six training patches, four validation patches, strict

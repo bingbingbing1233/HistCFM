@@ -1,7 +1,7 @@
 # Public validation record
 
-HistCFM `0.1.0` completed an end-to-end public synthetic validation on
-2026-08-13 in an independently created `histcfm` environment. This page records
+HistCFM `0.1.1` completed an end-to-end public synthetic validation on
+2026-08-14 in an independently created `histcfm` environment. This page records
 the validated environment, scope, expected outputs, and commands needed to
 repeat that public software check.
 
@@ -25,12 +25,12 @@ boundary.
 
 The release validation confirmed:
 
-- package version `0.1.0` and an available `histcfm` CLI;
+- package version `0.1.1` and an available `histcfm` CLI;
 - all 75 automated tests;
 - training-data preflight;
 - six synthetic training patches and one training epoch;
 - creation and strict reload of one schema-3 checkpoint carrying version
-  `0.1.0`;
+  `0.1.1`;
 - inference-data preflight and four validation patches;
 - validation inference for 36 cells and 24 genes;
 - evaluation and all 14 expected workflow outputs;
@@ -91,7 +91,7 @@ from histcfm.checkpoint import CHECKPOINT_SCHEMA_VERSION, load_checkpoint
 checkpoint = load_checkpoint(
     "runs/demo_train/checkpoints/epoch_1.pth", map_location="cpu"
 )
-assert __version__ == "0.1.0"
+assert __version__ == "0.1.1"
 assert checkpoint["schema_version"] == CHECKPOINT_SCHEMA_VERSION == 3
 assert checkpoint["histcfm_version"] == __version__
 print("checkpoint contract: PASSED")

@@ -164,7 +164,7 @@ docs/              Detailed preparation and reproducibility guides
 
 ## Reproducibility and scope
 
-- HistCFM `0.1.0` passed all 75 tests and the complete synthetic validate/train/checkpoint/infer/evaluate workflow in the declared independent Linux/CUDA environment.
+- HistCFM `0.1.1` passed all 75 tests and the complete synthetic validate/train/checkpoint/infer/evaluate workflow in the declared independent Linux/CUDA environment.
 - The synthetic demo validates software plumbing only; it is not a paper benchmark or biological result.
 - Real datasets and paper checkpoints are not distributed here.
 - Users prepare real morphology features independently through authorized external-model access.
