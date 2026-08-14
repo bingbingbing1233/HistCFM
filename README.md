@@ -4,13 +4,9 @@
 
 **HistCFM: Semantics-Guided Conditional Flow Matching for Single-Cell Spatial Gene Expression Prediction from Histology**
 
-**Authors:** Yanbing Xiao, Chunyang Meng, Anping Xiong<sup>*</sup>, Yi Jiang, Zipeng Wang, Wei Cheng, Xiang Ao, and Yuansong Zeng<sup>**</sup>
+HistCFM is a cell-level histology-to-gene-expression framework that integrates tissue morphology, spatial-neighborhood information, and conditional flow matching. It operates on processed cell-level inputs and precomputed morphology features.
 
-**Corresponding author:** Yuansong Zeng ([zengys@cqu.edu.cn](mailto:zengys@cqu.edu.cn))
-
-HistCFM is a cell-level histology-to-gene-expression model that combines tissue morphology, spatial neighborhoods, and conditional flow matching. It operates on processed cell-level inputs and precomputed morphology features.
-
-The package provides one model and consistent command-line workflows for training, inference, and evaluation. See [provenance](docs/provenance.md) for the complete research-to-release source map.
+The repository provides installation instructions, documented command-line workflows for training, inference, and evaluation, and a fully synthetic end-to-end example for verifying the software pipeline.
 
 ## Overview
 
@@ -174,12 +170,11 @@ docs/              Detailed preparation and reproducibility guides
 - Users prepare real morphology features independently through authorized external-model access.
 - See [environment](docs/environment.md), [server validation](docs/server_validation.md), and [reproducibility](docs/reproducibility.md) for detailed scope.
 
-## Citation
+## Citation and archival record
 
-The HistCFM citation will be updated when the accompanying manuscript is published. Please also cite the upstream methods used in your workflow:
+The HistCFM software release associated with this study is archived on Zenodo:
 
-- Fu et al. “Spatial gene expression at single-cell resolution from histology using deep learning with GHIST.” *Nature Methods* 22, 1900–1910 (2025). <https://doi.org/10.1038/s41592-025-02795-z>
-- Chen, R.J., Ding, T., Lu, M.Y., Williamson, D.F.K., et al. “Towards a general-purpose foundation model for computational pathology.” *Nature Medicine* (2024). <https://doi.org/10.1038/s41591-024-02857-3>
+[https://doi.org/10.5281/zenodo.21936408](https://doi.org/10.5281/zenodo.21936408)
 
 ## License and third-party components
 
