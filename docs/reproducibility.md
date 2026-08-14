@@ -44,8 +44,7 @@ files existed. Standard-JSON parsing found no NaN or Infinity in metadata or
 metrics. These facts are software-contract evidence, not biological or paper-
 benchmark results.
 
-Private real-data technical validation is deliberately separate and is not a
-submission gate. Its real inputs and real precomputed features are not copied
-into the public tree, and any one-epoch validation run is not a paper
-benchmark or public-data authorization. The synthetic results validate only
-software plumbing and are not biological-performance or paper-metric claims.
+Real-data benchmark inputs, external-model features, checkpoints, predictions,
+and metrics are not included in the public repository. The committed synthetic
+results validate only software plumbing and are not biological-performance or
+paper-metric claims.

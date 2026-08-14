@@ -1,32 +1,60 @@
-# Server validation record and sequence
+# Public validation record
 
-On 2026-08-13, HistCFM `0.1.0` passed preflight in the independent `histcfm`
-environment, all 75 tests, train and inference data validation, one-epoch
-synthetic training, strict schema-3 checkpoint reload, validation inference,
-evaluation, strict JSON parsing, and cell/gene ordering checks. The run used
-six training patches and four validation patches; inference produced 36 cells
-by 24 genes. The checkpoint and inference metadata both recorded version
-`0.1.0`, and all 14 expected output files existed.
+HistCFM `0.1.0` completed an end-to-end public synthetic validation on
+2026-08-13 in an independently created `histcfm` environment. This page records
+the validated environment, scope, expected outputs, and commands needed to
+repeat that public software check.
 
-This is a software-flow result only. It is not a private-BC1 validation, paper
-benchmark rerun, biological result, or model-performance claim.
+## Validated environment
 
-This document lists commands only; it contains no server address, account,
-private source path, or environment-installation command. Run each section in
-an already prepared environment. Output directories must be new or empty.
+```text
+Linux x86-64
+Python 3.10.14
+PyTorch 2.1.1
+torchvision 0.16.1
+PyTorch CUDA runtime 12.1
+NumPy 1.26.4
+NVIDIA GPU with a compatible driver
+```
 
-Use the independent `histcfm` Conda environment. The authoritative environment
-creation, one-shot validation, checkpoint discovery/schema check, resume rules,
-and log return list are in [server_run_histcfm.md](server_run_histcfm.md).
+The environment import and CUDA preflight passed before testing. See
+[environment.md](environment.md) for installation and the complete dependency
+boundary.
 
-## Repeating the synthetic end-to-end validation
+## Validated scope
 
-Run from the release repository root:
+The release validation confirmed:
+
+- package version `0.1.0` and an available `histcfm` CLI;
+- all 75 automated tests;
+- training-data preflight;
+- six synthetic training patches and one training epoch;
+- creation and strict reload of one schema-3 checkpoint carrying version
+  `0.1.0`;
+- inference-data preflight and four validation patches;
+- validation inference for 36 cells and 24 genes;
+- evaluation and all 14 expected workflow outputs;
+- identical cell and gene order in predictions and targets; and
+- standards-compliant JSON metadata and metrics without NaN or Infinity.
+
+This is software-flow evidence for the committed synthetic demo. It is not a
+paper benchmark, biological result, real-dataset validation, runtime guarantee,
+or claim of bitwise reproducibility on every platform.
+
+## Repeat the validation
+
+Create and activate the environment as described in
+[environment.md](environment.md), install HistCFM from the repository root,
+and choose new or empty output directories. Runtime outputs must not be
+committed.
 
 ```bash
-pytest
+python scripts/check_environment.py
+python -m pytest
 
-histcfm validate-data --mode train --config configs/demo.yaml
+histcfm validate-data \
+  --mode train \
+  --config configs/demo.yaml
 
 histcfm train \
   --config configs/demo.yaml \
@@ -51,64 +79,49 @@ histcfm evaluate \
   --output-dir runs/demo_metrics
 ```
 
-Expected paths follow directly from the formal implementation:
+With the committed one-epoch demo configuration, training writes
+`checkpoints/epoch_1.pth`. Confirm its schema and package version with the
+trusted local checkpoint loader:
+
+```bash
+python - <<'PY'
+from histcfm import __version__
+from histcfm.checkpoint import CHECKPOINT_SCHEMA_VERSION, load_checkpoint
+
+checkpoint = load_checkpoint(
+    "runs/demo_train/checkpoints/epoch_1.pth", map_location="cpu"
+)
+assert __version__ == "0.1.0"
+assert checkpoint["schema_version"] == CHECKPOINT_SCHEMA_VERSION == 3
+assert checkpoint["histcfm_version"] == __version__
+print("checkpoint contract: PASSED")
+PY
+```
+
+## Expected outputs
+
+The complete workflow produces 14 files:
 
 ```text
 runs/demo_train/artifacts/histology_normalization.npy
 runs/demo_train/checkpoints/epoch_1.pth
+runs/demo_train/logs/train.log
+runs/demo_train/logs/train_losses.csv
+runs/demo_train/resolved_config.yaml
 runs/demo_infer/predictions.csv
 runs/demo_infer/targets.csv
 runs/demo_infer/cell_types.csv
+runs/demo_infer/cells.csv
+runs/demo_infer/metadata.json
+runs/demo_infer/resolved_inference_config.yaml
 runs/demo_metrics/metrics.json
 runs/demo_metrics/per_gene_metrics.csv
 runs/demo_metrics/cell_type_metrics.json
 ```
 
-Do not commit any file under `runs/`.
-
-## Optional private real-data technical validation (not a release gate)
-
-The real-data configuration and instructions live outside this public
-repository. They use the same CLI and differ only in input/configuration paths.
-Substitute local paths; run the data commands from the private staging
-directory because its YAML paths are staging-relative.
-
-```bash
-RELEASE_REPO='<RELEASE_REPO>'
-PRIVATE_STAGING_DIR='<PRIVATE_STAGING_DIR>'
-PRIVATE_RUN_ROOT='<PRIVATE_RUN_ROOT>'
-
-cd "$RELEASE_REPO"
-pytest
-
-cd "$PRIVATE_STAGING_DIR"
-
-histcfm validate-data --mode train --config demo_private_bc1.yaml
-
-histcfm train \
-  --config demo_private_bc1.yaml \
-  --output-dir "$PRIVATE_RUN_ROOT/train"
-
-histcfm validate-data \
-  --mode infer \
-  --split validation \
-  --config demo_private_bc1.yaml \
-  --checkpoint "$PRIVATE_RUN_ROOT/train/checkpoints/epoch_1.pth"
-
-histcfm infer \
-  --split validation \
-  --config demo_private_bc1.yaml \
-  --checkpoint "$PRIVATE_RUN_ROOT/train/checkpoints/epoch_1.pth" \
-  --output-dir "$PRIVATE_RUN_ROOT/infer"
-
-histcfm evaluate \
-  --predictions "$PRIVATE_RUN_ROOT/infer/predictions.csv" \
-  --targets "$PRIVATE_RUN_ROOT/infer/targets.csv" \
-  --cell-types "$PRIVATE_RUN_ROOT/infer/cell_types.csv" \
-  --output-dir "$PRIVATE_RUN_ROOT/metrics"
-```
-
-Private inputs, precomputed real features, configurations, checkpoints,
-normalization, predictions, metrics, and logs must remain outside the public
-repository. This technical run does not reproduce or select paper benchmark
-results.
+Predictions and targets must both contain 36 rows and the same ordered 24-gene
+header for the committed demo. `metadata.json`, `metrics.json`, and
+`cell_type_metrics.json` must parse as standard JSON without non-finite
+constants. Generated checkpoints, normalization, logs, predictions, targets,
+and metrics are local validation artifacts and are intentionally excluded from
+the release repository.

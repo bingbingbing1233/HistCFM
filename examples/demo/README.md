@@ -16,8 +16,9 @@ and must not be used to assess model quality. On 2026-08-13, the independent
 server environment passed all 75 tests and the full synthetic workflow: six
 training patches, four validation patches, checkpoint save/strict reload,
 inference for 36 cells and 24 genes, evaluation, strict JSON, and output-order
-checks. That run preceded the `0.1.0` metadata update, so it must be repeated
-before tagging. No runtime estimate or example metric is claimed.
+checks. The final repeat used HistCFM `0.1.0`; its schema-3 checkpoint and
+inference metadata both recorded version `0.1.0`. No runtime estimate or
+example metric is claimed.
 
 ## Run from the repository root
 

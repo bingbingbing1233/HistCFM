@@ -153,8 +153,8 @@ def test_public_environment_and_run_docs_match_cli_names():
         ROOT / "examples" / "demo" / "README.md",
         ROOT / "docs" / "environment.md",
         ROOT / "docs" / "server_validation.md",
-        ROOT / "docs" / "server_run_histcfm.md",
     ]
+    assert not (ROOT / "docs" / "server_run_histcfm.md").exists()
     text = "\n".join(path.read_text(encoding="utf-8") for path in public_files)
     assert "conda activate ghist" not in text
     assert "conda activate histcfm" in text
@@ -206,9 +206,10 @@ def test_real_data_guides_preserve_external_boundaries():
     assert "uni_features.npy" in uni_guide
     assert "not a claim of byte identity" in uni_guide
 
-    assert "Real-data workflow" in readme
-    assert "Optional synthetic end-to-end smoke test" in readme
-    assert "does not include or download UNI" in readme
+    assert "Preparing real data" in readme
+    assert "Quick smoke test" in readme
+    assert "does not vendor the GHIST preprocessing workflow" in readme
+    assert "does not redistribute UNI source code or model weights" in readme
 
 
 def test_default_tests_do_not_run_complete_training():

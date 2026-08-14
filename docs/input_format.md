@@ -16,7 +16,8 @@ boundary and feature-store preparation protocol, see
 
 The schema below is derived from the audited cell-level loader. The committed
 synthetic smoke inputs implement this schema and are covered by contract tests;
-full model execution remains a target-server validation step.
+the complete synthetic validate/train/checkpoint/infer/evaluate workflow has
+also passed in the documented independent Linux/CUDA environment.
 
 ## Required files
 

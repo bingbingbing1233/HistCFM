@@ -82,11 +82,14 @@ Raw Xenium data and registered H&E
   -> HistCFM
 ```
 
-HistCFM links to the official [SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST) preprocessing resources rather than copying the complete pipeline. Users with HistCFM-ready inputs do not need to install or rerun GHIST.
+- **GHIST preprocessing workflow:** [https://github.com/SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST)
+- **UNI foundation model:** [https://github.com/mahmoodlab/UNI](https://github.com/mahmoodlab/UNI)
 
-HistCFM does not include or download UNI code or weights. Users preparing real features must obtain access through the official [MahmoodLab/UNI](https://github.com/mahmoodlab/UNI) channel and follow its terms.
+Users starting from raw Xenium data should follow the GHIST preprocessing workflow and then organize the resulting files according to the [HistCFM input specification](docs/input_format.md). Users with HistCFM-ready inputs do not need to install or rerun GHIST.
 
-See [real-data preparation](docs/data_preparation.md), the [input format](docs/input_format.md), and [precomputed morphology features](docs/uni_features.md).
+Histology embeddings should be generated using an authorized local installation of UNI and converted to the precomputed feature format described in the [UNI feature guide](docs/uni_features.md). HistCFM does not vendor the GHIST preprocessing workflow or download or redistribute UNI source code, UNI model weights, or real-data UNI features. These external resources are not required for the included synthetic smoke demo.
+
+See [real-data preparation](docs/data_preparation.md) and the [input format](docs/input_format.md) for the complete preparation and data contracts.
 
 | Input | Purpose |
 | --- | --- |
@@ -97,17 +100,6 @@ See [real-data preparation](docs/data_preparation.md), the [input format](docs/i
 | Cell types CSV | Required with cell-type supervision; omitted for unlabeled prediction |
 | `uni_index.json` | Canonical patch-key-to-row mapping |
 | `uni_features.npy` | Precomputed morphology-feature matrix |
-
-## External resources for real-data preparation
-
-HistCFM operates on preprocessed, cell-level inputs and precomputed histology features. The following external resources are used for preparing real datasets:
-
-- **GHIST preprocessing workflow:** [https://github.com/SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST)
-- **UNI foundation model:** [https://github.com/mahmoodlab/UNI](https://github.com/mahmoodlab/UNI)
-
-Users starting from raw Xenium data should follow the GHIST preprocessing workflow and then organize the resulting files according to the [HistCFM input specification](docs/input_format.md). Histology embeddings should be generated using an authorized local installation of UNI and converted to the precomputed feature format described in the [UNI feature guide](docs/uni_features.md).
-
-These external resources are not required for running the included synthetic smoke demo. GHIST source code, UNI source code, UNI model weights, and real-data UNI features are not redistributed in this repository.
 
 ## Datasets used in this study
 
@@ -191,7 +183,7 @@ The HistCFM citation will be updated when the accompanying manuscript is publish
 
 ## License and third-party components
 
-HistCFM is released under `GPL-3.0-only` and is derived in part from [SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST). The backbone provenance includes the earlier avBuffer/U-Net 3+ lineage; attribution, license context, modification notices, and source-chain uncertainty are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), [provenance](docs/provenance.md), and [licensing](docs/licensing.md). HistCFM does not distribute the UNI model or weights.
+HistCFM is released under `GPL-3.0-only` and includes code derived from [SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST). Third-party attribution, provenance, licensing information, and modification notices are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), [provenance](docs/provenance.md), and [licensing](docs/licensing.md). HistCFM does not redistribute UNI source code or model weights.
 
 ## Acknowledgements
 

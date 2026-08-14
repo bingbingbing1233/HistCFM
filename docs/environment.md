@@ -16,10 +16,9 @@ Linux x86-64 with an NVIDIA GPU and compatible driver
 
 This is evidence for one Linux/CUDA stack, not a claim that every server or
 dependency combination has been tested. The CUDA driver is managed by the
-server administrator and is not installed by this repository. Because the
-successful run immediately preceded the version-metadata change to `0.1.0`, a
-short repeat is required before tagging so generated metadata records the
-release version.
+server administrator and is not installed by this repository. The final
+`0.1.0` repeat completed successfully, and its schema-3 checkpoint and
+inference metadata both recorded package version `0.1.0`.
 
 ## Dependency audit
 
