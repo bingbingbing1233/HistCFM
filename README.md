@@ -1,9 +1,5 @@
 # HistCFM
 
-## v0.1.2
-
-v0.1.2 更新 demo 的空间条带划分，设置独立的训练集、验证集和测试集，并通过验证集选择最佳 epoch 后进行测试集评估。demo 使用适配小尺寸合成图像的 1:1:1 划分，正式实验采用 7:1:2 划分。
-
 ## Paper
 
 **HistCFM: Semantics-Guided Conditional Flow Matching for Single-Cell Spatial Gene Expression Prediction from Histology**
@@ -183,9 +179,7 @@ docs/              Detailed preparation and reproducibility guides
 
 ## Citation and archival record
 
-Zenodo DOI for the archived v0.1.1 release (not v0.1.2):
-
-[https://doi.org/10.5281/zenodo.21936408](https://doi.org/10.5281/zenodo.21936408)
+Zenodo archive for v0.1.2: pending publication. The DOI will be added once the new version is published.
 
 ## License and third-party components
 
@@ -200,3 +194,9 @@ The histology backbone follows the U-Net 3+ implementation included in GHIST, wh
 We also thank the authors of [UNI](https://github.com/mahmoodlab/UNI) for the pretrained foundation model used to derive histology features in the HistCFM experiments.
 
 Users should obtain all external resources from their official repositories and comply with the corresponding access and licensing terms.
+
+## Release notes
+
+### v0.1.2
+
+Updated the demo's spatial strip partitioning to use independent training, validation, and test sets. The best epoch is selected using the validation set before evaluation on the test set. The demo uses a 1:1:1 split suited to small synthetic images; the formal experiments use a 7:1:2 split.
