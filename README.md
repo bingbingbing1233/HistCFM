@@ -179,7 +179,7 @@ docs/              Detailed preparation and reproducibility guides
 
 ## Citation and archival record
 
-Zenodo archive for v0.1.2: pending publication. The DOI will be added once the new version is published.
+Zenodo archive: v0.1.2.
 
 ## License and third-party components
 
