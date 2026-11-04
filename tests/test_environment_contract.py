@@ -152,7 +152,7 @@ def test_public_environment_and_run_docs_match_cli_names():
         ROOT / "README.md",
         ROOT / "examples" / "demo" / "README.md",
         ROOT / "docs" / "environment.md",
-        ROOT / "docs" / "server_validation.md",
+        ROOT / "docs" / "reproducibility.md",
     ]
     assert not (ROOT / "docs" / "server_run_histcfm.md").exists()
     text = "\n".join(path.read_text(encoding="utf-8") for path in public_files)

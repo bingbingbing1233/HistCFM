@@ -1,86 +1,47 @@
-# Optional synthetic end-to-end smoke test
+# Synthetic spatial-split demonstration
 
-This optional committed demo is entirely synthetic and exercises the same `histcfm
-train`, `histcfm infer`, and `histcfm evaluate` commands used for prepared real
-inputs. There is no alternate demo model or training script.
+The original synthetic 768 × 768 histology image, nucleus mask, 96 cells,
+24 genes and four cell types are retained. No patient data or real UNI output
+is used. This is a software demonstration, not a biological benchmark.
 
-It contains 96 generated cells, 24 synthetic genes, four synthetic cell types,
-six training patches, four validation patches, and ten rows of synthetic
-precomputed morphology features. The feature matrix matches the formal
-1024-dimensional interface but is not an output of UNI or any other model.
-See [DATA_PROVENANCE.md](DATA_PROVENANCE.md) and `checksums.sha256`.
+| Partition | Half-open row interval | Patches |
+|---|---|---:|
+| Train | [0, 256) | 3 |
+| Val | [256, 512) | 4 |
+| Test | [512, 768) | 4 |
 
-The smoke test validates software plumbing only. It contains no patient data,
-cannot support biological interpretation, does not reproduce paper metrics,
-and must not be used to assess model quality. On 2026-08-14, the independent
-server environment passed all 75 tests and the full synthetic workflow: six
-training patches, four validation patches, checkpoint save/strict reload,
-inference for 36 cells and 24 genes, evaluation, strict JSON, and output-order
-checks. The final repeat used HistCFM `0.1.1`; its schema-3 checkpoint and
-inference metadata both recorded version `0.1.1`. No runtime estimate or
-example metric is claimed.
+The 1:1:1 spatial ratio allows a full 256-pixel patch in each strip. This demonstration is separate from the formal spatial 7:1:2 experiments.
+Nuclei are assigned by their whole-mask row centroid; foreign nuclei are masked
+out of supervision. Patches stay inside their partition. RGB statistics are
+computed on Train only. Eleven synthetic feature rows cover all demo patches.
 
 ## Run from the repository root
 
-Use the independent environment defined at the repository root. The committed
-feature matrix is already prepared and synthetic; neither UNI, `timm`, a UNI
-checkpoint, nor `stainlib` is needed:
+Install the root package using the environment described in the root README
+(`conda activate histcfm`). Then run:
 
 ```bash
-conda env create -f environment.yml
-conda activate histcfm
-python -m pip install --no-deps --no-build-isolation -e .
-python scripts/check_environment.py
+histcfm validate-data --mode train --config configs/demo.yaml
+histcfm train --config configs/demo.yaml --output-dir runs/demo_train
+histcfm validate-data --mode infer --split test --config configs/demo.yaml --checkpoint runs/demo_train/checkpoints/best_val.pth
+histcfm infer --split test --config configs/demo.yaml --checkpoint runs/demo_train/checkpoints/best_val.pth --output-dir runs/demo_test
+histcfm evaluate --predictions runs/demo_test/predictions.csv --targets runs/demo_test/targets.csv --cell-types runs/demo_test/cell_types.csv --output-dir runs/demo_metrics
 ```
 
-Output directories below must not already contain files.
+The default is three epochs. For a one-epoch smoke check, copy the YAML and set
+`training.epochs: 1`; selection then has only one candidate. Do not interpret
+synthetic PCC values as scientific results.
 
-```bash
-pytest
+Training evaluates Val after every epoch with fixed seed `training.seed + 10000`
+(or 10000 when no training seed is set), without changing subsequent training
+RNG state. It saves `checkpoints/best_val.pth`, `checkpoints/last.pth`, periodic
+`epoch_N.pth` files, `logs/validation_metrics.csv`, per-epoch validation tables
+under `validation/`, and `selection.json`. The highest finite mean gene PCC
+wins; ties keep the earliest epoch. If no gene has a defined PCC, selection
+fails explicitly. Test is never scored during training or used to choose epochs.
+Val/Test expression and cell-type labels are scoring targets only, not model
+inputs. All output directories must be new/nonempty-output protection applies.
 
-histcfm validate-data \
-  --mode train \
-  --config configs/demo.yaml
-
-histcfm train \
-  --config configs/demo.yaml \
-  --output-dir runs/demo_train
-
-histcfm validate-data \
-  --mode infer \
-  --split validation \
-  --config configs/demo.yaml \
-  --checkpoint runs/demo_train/checkpoints/epoch_1.pth
-
-histcfm infer \
-  --split validation \
-  --config configs/demo.yaml \
-  --checkpoint runs/demo_train/checkpoints/epoch_1.pth \
-  --output-dir runs/demo_infer
-
-histcfm evaluate \
-  --predictions runs/demo_infer/predictions.csv \
-  --targets runs/demo_infer/targets.csv \
-  --cell-types runs/demo_infer/cell_types.csv \
-  --output-dir runs/demo_metrics
-```
-
-Training creates, rather than consumes, these artifacts:
-
-```text
-runs/demo_train/artifacts/histology_normalization.npy
-runs/demo_train/checkpoints/epoch_1.pth
-runs/demo_train/logs/train.log
-runs/demo_train/logs/train_losses.csv
-runs/demo_train/resolved_config.yaml
-```
-
-Inference writes `predictions.csv`, `targets.csv`, `cell_types.csv`,
-`cells.csv`, `metadata.json`, and `resolved_inference_config.yaml` under
-`runs/demo_infer/`. Evaluation writes `metrics.json`,
-`per_gene_metrics.csv`, and `cell_type_metrics.json` under
-`runs/demo_metrics/`.
-
-These commands generate checkpoints, predictions, and metrics locally. None of
-those runtime outputs is committed as demo input or presented as a paper
-result.
+Training also creates `artifacts/histology_normalization.npy`; keep it with
+the checkpoints. Test outputs include aligned `predictions.csv`, `targets.csv`,
+`cell_types.csv`, `cells.csv` and `metadata.json`. Use checkpoints generated by this package.

@@ -23,7 +23,7 @@ from torchvision.transforms import v2
 from tqdm import tqdm
 
 from .image_io import load_image
-from .splitting import build_split_patch_coordinates, split_row_intervals
+from .splitting import build_split_patch_coordinates, split_row_intervals, partition_cell_ids
 from .validation import build_patch_key
 
 
@@ -156,6 +156,7 @@ def _prepare_input_data(
     cell_types: Optional[Sequence[str]],
     normalization_path: Optional[PathLike],
     normalization_output_dir: Optional[PathLike],
+    test_division=None,
 ):
     if expression_path is not None:
         expression = pd.read_csv(expression_path, index_col=0)
@@ -185,13 +186,15 @@ def _prepare_input_data(
     histology = load_image(histology_path)
     whole_height = histology.shape[0]
     whole_width = histology.shape[1]
-    row_intervals = split_row_intervals(whole_height, validation_division, mode)
+    row_intervals = split_row_intervals(whole_height, validation_division, mode, test_division)
     segmentation_ids = np.unique(
         np.concatenate(
             [nuclei[start:stop, :].reshape(-1) for start, stop in row_intervals]
         )
     )
     segmentation_ids = segmentation_ids[segmentation_ids != 0]
+    if test_division is not None:
+        segmentation_ids = list(partition_cell_ids(nuclei, row_intervals))
 
     matched_nuclei = pd.read_csv(matched_nuclei_path, index_col=0)
     matched_nuclei = matched_nuclei[
@@ -216,6 +219,7 @@ def _prepare_input_data(
         image_height=whole_height,
         image_width=whole_width,
         validation_division=validation_division,
+        test_division=test_division,
         patch_height=patch_height,
         patch_width=patch_width,
         overlap=overlap,
@@ -327,9 +331,10 @@ class HistCFMDataset(data.Dataset):
         stain_augmentation: bool = False,
         normalization_path: Optional[PathLike] = None,
         normalization_output_dir: Optional[PathLike] = None,
+        test_division=None,
     ):
-        if mode not in {"train", "val", "predict"}:
-            raise ValueError("mode must be one of: train, val, predict")
+        if mode not in {"train", "val", "predict", "test"}:
+            raise ValueError("mode must be one of: train, val, predict, test")
         if int(patch_height) <= 0 or int(patch_width) <= 0:
             raise ValueError("patch_height and patch_width must be positive")
         if int(overlap) < 0 or int(overlap) >= min(int(patch_height), int(patch_width)):
@@ -385,6 +390,7 @@ class HistCFMDataset(data.Dataset):
             overlap=effective_overlap,
             gene_names=self.gene_names,
             validation_division=validation_division,
+            test_division=test_division,
             expression_path=expression_path,
             cell_type_path=cell_type_path,
             cell_types=self.cell_types,

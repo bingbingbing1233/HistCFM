@@ -1,3 +1,5 @@
+> With `data.test_split` set, Train excludes both Val and Test. The demo uses three equal spatial strips; see the [demo guide](../examples/demo/README.md).
+
 # Preparing real data for HistCFM
 
 HistCFM starts from aligned, preprocessed cell-level inputs. It does not
@@ -19,8 +21,7 @@ without installing GHIST.
 
 ## Official GHIST entry points
 
-The following paths existed on the audited GHIST `main` branch at commit
-`917456be305fc82e92293ea272812e79675e821c`:
+The following upstream entry points are linked for data preparation:
 
 | Official GHIST path | Purpose |
 | --- | --- |
@@ -103,9 +104,10 @@ counts, and gene meaning. In particular:
   Values must be numeric, finite, non-negative raw counts. At runtime the
   target is `data.expression_scale * log1p(count)`.
 - The validation split is a pair of image-height fractions. Validation uses
-  that row interval and training uses its complement. Both must contain at
-  least one eligible patch. Training uses zero overlap; validation uses
-  `data.overlap`.
+  that row interval. When `data.test_split` is set, Test uses its separate
+  interval and training excludes both Val and Test; otherwise training uses
+  the complement of Val. Each partition must contain an eligible full-size
+  patch. Training uses zero overlap; validation and test use `data.overlap`.
 - Patch dimensions cannot exceed the image; overlap must be smaller than both
   dimensions. If any eligible patch exceeds `data.max_cells_per_patch`,
   preflight fails instead of truncating cells.

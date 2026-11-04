@@ -7,6 +7,9 @@ and metadata-rich checkpoints while retaining the audited training math and
 loss order. Distributed under GNU GPL version 3 only; see ``LICENSE``.
 """
 
+import copy
+import json
+import shutil
 import csv
 import logging
 import random
@@ -192,6 +195,7 @@ def validate_training_data(config: ConfigInput) -> Mapping[str, Any]:
             overlap=resolved.data.overlap,
             min_nucleus_area=resolved.data.min_nucleus_area,
             mode=mode,
+            test_division=resolved.data.test_split,
             require_cell_types=resolved.model.use_cell_types,
         )
         if inventory.largest_cell_count > resolved.data.max_cells_per_patch:
@@ -246,6 +250,7 @@ def _build_datasets_and_preflight(
         "expression_scale": config.data.expression_scale,
         "validation_division": config.data.validation_split,
         "use_cell_types": config.model.use_cell_types,
+        "test_division": config.data.test_split,
     }
     train_dataset = HistCFMDataset(
         **common,
@@ -661,6 +666,8 @@ def train(config: ConfigInput, output_dir: PathLike) -> Mapping[str, Any]:
 
     loss_log = paths["logs"] / "train_losses.csv"
     last_checkpoint = None
+    best_pcc, best_epoch = None, None
+    validation_history = []
     for epoch in range(resolved.training.epochs):
         model.train()
         stage_pretrain = epoch < resolved.flow.warmup_epochs
@@ -755,27 +762,55 @@ def train(config: ConfigInput, output_dir: PathLike) -> Mapping[str, Any]:
                 )
                 logger.info("Flow grad norm this epoch: %s", flow_grad_norm)
 
+        last_checkpoint = save_checkpoint(
+            paths["checkpoints"] / "last.pth",
+            epoch=epoch + 1, model=model, optimizer=optimizer,
+            include_optimizer=resolved.training.save_optimizer,
+            resolved_config=resolved_dict, genes=resolved.data.genes,
+            cell_types=resolved.data.cell_types if resolved.model.use_cell_types else [],
+            normalization_artifact=NORMALIZATION_ARTIFACT, seed=seed,
+        )
+        # Validation uses the public inference/scoring path and a fixed seed.
+        # Restore training RNGs so validation cannot perturb subsequent updates.
+        from .inference import infer
+        from .evaluate import evaluate
+        rng_python, rng_numpy = random.getstate(), np.random.get_state()
+        rng_torch = torch.get_rng_state()
+        rng_cuda = torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+        validation_config = copy.deepcopy(resolved)
+        validation_config.training.seed = (seed if seed is not None else 0) + 10000
+        validation_dir = paths["root"] / "validation" / f"epoch_{epoch + 1}"
+        try:
+            tables = infer(validation_config, last_checkpoint, validation_dir / "inference", split="validation", _training_validation=True)
+            scored = evaluate(tables["predictions"], tables["targets"], validation_dir / "metrics")
+            score = json.loads(Path(scored["metrics"]).read_text())["mean_gene_pcc"]
+        finally:
+            random.setstate(rng_python)
+            np.random.set_state(rng_numpy)
+            torch.set_rng_state(rng_torch)
+            if rng_cuda is not None:
+                torch.cuda.set_rng_state_all(rng_cuda)
+        if score is None or not np.isfinite(score):
+            raise ValueError("Validation mean gene PCC is undefined; cannot select an epoch")
+        validation_history.append(dict(epoch=epoch + 1, mean_gene_pcc=score))
+        pd.DataFrame(validation_history).to_csv(paths["logs"] / "validation_metrics.csv", index=False)
+        if best_pcc is None or score > best_pcc:
+            best_pcc, best_epoch = score, epoch + 1
+            shutil.copyfile(last_checkpoint, paths["checkpoints"] / "best_val.pth")
         if epoch % resolved.training.checkpoint_frequency == 0:
-            last_checkpoint = save_checkpoint(
-                paths["checkpoints"] / f"epoch_{epoch + 1}.pth",
-                epoch=epoch + 1,
-                model=model,
-                optimizer=optimizer,
-                include_optimizer=resolved.training.save_optimizer,
-                resolved_config=resolved_dict,
-                genes=resolved.data.genes,
-                cell_types=(
-                    resolved.data.cell_types if resolved.model.use_cell_types else []
-                ),
-                normalization_artifact=NORMALIZATION_ARTIFACT,
-                seed=seed,
-            )
-            logger.info("Saved checkpoint: %s", last_checkpoint)
+            shutil.copyfile(last_checkpoint, paths["checkpoints"] / f"epoch_{epoch + 1}.pth")
+        selection = dict(metric="mean_gene_pcc", direction="maximize", tie_break="earliest_epoch",
+                         best_epoch=best_epoch, best_val_pcc=best_pcc,
+                         validation_seed=validation_config.training.seed, test_used=False)
+        (paths["root"] / "selection.json").write_text(json.dumps(selection, indent=2, allow_nan=False) + "\n")
+        logger.info("Validation PCC %.6f; best epoch %d", score, best_epoch)
 
     logger.info("Training finished")
     return {
         "output_dir": str(paths["root"]),
         "last_checkpoint": None if last_checkpoint is None else str(last_checkpoint),
+        "best_checkpoint": str(paths["checkpoints"] / "best_val.pth"),
+        "best_epoch": best_epoch,
         "resolved_config": str(paths["root"] / "resolved_config.yaml"),
         "normalization_artifact": str(paths["root"] / NORMALIZATION_ARTIFACT),
         "loss_log": str(loss_log),

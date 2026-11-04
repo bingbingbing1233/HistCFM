@@ -20,9 +20,10 @@ access, model loading, encoder call, or checkpoint input.
 | Cells | 96, IDs 1–96 |
 | Genes | 24 (`synthetic_gene_01`–`synthetic_gene_24`) |
 | Cell types | 4 (`synthetic_type_a`–`synthetic_type_d`) |
-| Training patches | 6 |
+| Training patches | 3 |
 | Validation patches | 4 |
-| Feature rows | 10 |
+| Test patches | 4 |
+| Feature rows | 11 |
 | Feature dimension | 1024 |
 | Feature dtype | float16 |
 

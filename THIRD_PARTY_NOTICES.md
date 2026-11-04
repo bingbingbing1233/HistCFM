@@ -9,7 +9,6 @@ HistCFM. The repository-level software license is `GPL-3.0-only`; see
 ## SydneyBioX/GHIST
 
 - Official repository: <https://github.com/SydneyBioX/GHIST>
-- Reference commit: `917456be305fc82e92293ea272812e79675e821c`
 - Published repository license: GNU General Public License, version 3
 
 HistCFM contains selected model, data, image-I/O, training, and inference code

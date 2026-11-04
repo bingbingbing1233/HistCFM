@@ -11,7 +11,6 @@ Distributed under GNU GPL version 3 only; see ``LICENSE``.
 """
 
 import json
-import hashlib
 import random
 from dataclasses import asdict
 from pathlib import Path
@@ -49,7 +48,7 @@ from .train import build_model, seed_worker, set_seed
 
 
 ConfigInput = Union[HistCFMConfig, PathLike]
-SUPPORTED_SPLITS = {"validation": "val", "prediction": "predict"}
+SUPPORTED_SPLITS = {"validation": "val", "prediction": "predict", "test": "test"}
 
 
 def _config_from_mapping(raw: Any) -> HistCFMConfig:
@@ -181,6 +180,11 @@ def _compare_checkpoint_config(
         for name, (actual, expected) in comparisons.items()
         if actual != expected
     ]
+    if (trained.data.test_split is not None or runtime.data.test_split is not None) and (
+        runtime.data.test_split != trained.data.test_split or
+        runtime.data.validation_split != trained.data.validation_split
+    ):
+        mismatches.append("checkpoint-bound spatial partitions differ")
     metadata = checkpoint["model_metadata"]
     expected_classes = len(checkpoint["cell_type_mapping"])
     if metadata["n_classes"] != expected_classes:
@@ -202,7 +206,7 @@ def _validate_runtime_paths(config: HistCFMConfig, split: str) -> None:
         "nucleus_mask": config.data.nucleus_mask_path,
         "matched_nuclei": config.data.matched_nuclei_path,
     }
-    if split == "validation":
+    if split in {"validation", "test"}:
         required["expression"] = config.data.expression_path
         if config.model.use_cell_types:
             required["cell_type"] = config.data.cell_type_path
@@ -349,8 +353,8 @@ def _build_dataset_and_preflight(
         nucleus_mask_path=config.data.nucleus_mask_path,
         histology_path=config.data.histology_path,
         matched_nuclei_path=config.data.matched_nuclei_path,
-        expression_path=(config.data.expression_path if split == "validation" else None),
-        cell_type_path=(config.data.cell_type_path if split == "validation" else None),
+        expression_path=(config.data.expression_path if split in {"validation", "test"} else None),
+        cell_type_path=(config.data.cell_type_path if split in {"validation", "test"} else None),
         gene_names=config.data.genes,
         cell_types=config.data.cell_types,
         patch_height=config.data.patch_height,
@@ -361,12 +365,13 @@ def _build_dataset_and_preflight(
         expression_scale=config.data.expression_scale,
         validation_division=config.data.validation_split,
         mode=mode,
-        use_cell_types=(config.model.use_cell_types and split == "validation"),
+        test_division=config.data.test_split,
+        use_cell_types=(config.model.use_cell_types and split in {"validation", "test"}),
         stain_augmentation=False,
         normalization_path=normalization_path,
         normalization_output_dir=None,
     )
-    if split == "validation":
+    if split in {"validation", "test"}:
         uni_index, uni_features = _uni_paths(config)
         validate_histcfm_ready_inputs(
             histology_path=config.data.histology_path,
@@ -443,10 +448,12 @@ def _prepare_output(
     output_dir: Path,
     config: HistCFMConfig,
     checkpoint_path: Path,
+    training_validation: bool = False,
 ) -> Path:
     resolved_output = output_dir.resolve()
     run_root = checkpoint_path.resolve().parent.parent
-    if resolved_output == run_root or run_root in resolved_output.parents:
+    internal_validation = training_validation and (run_root / "validation") in resolved_output.parents
+    if (resolved_output == run_root or run_root in resolved_output.parents) and not internal_validation:
         raise ValueError("Inference output_dir must be outside the checkpoint training run")
     input_paths = [
         config.data.histology_path,
@@ -523,11 +530,13 @@ def infer(
     checkpoint_path: PathLike,
     output_dir: PathLike,
     split: str = "validation",
+    *,
+    _training_validation: bool = False,
 ) -> Mapping[str, str]:
     """Run one CFM sample from one explicit formal HistCFM checkpoint."""
 
     if split not in SUPPORTED_SPLITS:
-        raise ValueError("split must be 'validation' or 'prediction'")
+        raise ValueError("split must be 'validation', 'test', or 'prediction'")
     runtime = _load_inference_config(config)
     _validate_runtime_paths(runtime, split)
     checkpoint_file = Path(checkpoint_path)
@@ -578,7 +587,8 @@ def infer(
     if len(dataloader) == 0:
         raise ValueError("Inference DataLoader contains zero batches")
 
-    output = _prepare_output(Path(output_dir), runtime, checkpoint_file)
+    output = _prepare_output(Path(output_dir), runtime, checkpoint_file,
+                             training_validation=_training_validation and split == "validation")
     normalized_relative = checkpoint["normalization_artifact"]
     public_config = _sanitized_config(runtime, normalized_relative)
     write_config(public_config, output / "resolved_inference_config.yaml")
@@ -605,12 +615,9 @@ def infer(
             batch_histology = batch_histology.to(device)
             batch_n_cells = batch_n_cells.to(device)
             patch_ids = patch_ids.to(device)
-            if split == "validation":
-                batch_expression_input = batch_expression.to(device)
-                batch_cell_type_input = batch_cell_type.to(device)
-            else:
-                batch_expression_input = None
-                batch_cell_type_input = None
+            # Held-out labels are scoring data, never conditioning inputs.
+            batch_expression_input = None
+            batch_cell_type_input = None
             outputs = model(
                 batch_histology,
                 batch_nuclei,
@@ -623,8 +630,8 @@ def infer(
             )
             out_cell_type = outputs[0]
             out_expression = outputs[3]
-            batch_cell_type_flat = outputs[2]
-            batch_expression_flat = outputs[11]
+            batch_cell_type_flat = torch.cat([batch_cell_type[i, :int(n)] for i, n in enumerate(batch_n_cells)])
+            batch_expression_flat = torch.cat([batch_expression[i, :int(n)] for i, n in enumerate(batch_n_cells)])
             batch_area = outputs[13]
             patch_ids_flat = outputs[14]
             if out_expression.shape[0] == 0:
@@ -633,7 +640,7 @@ def infer(
             predictions.append(
                 (out_expression.detach().cpu().numpy() / runtime.data.expression_scale)
             )
-            if split == "validation":
+            if split in {"validation", "test"}:
                 targets.append(
                     batch_expression_flat.detach().cpu().numpy()
                     / runtime.data.expression_scale
@@ -654,7 +661,7 @@ def infer(
                     .numpy()
                     .tolist()
                 )
-                if split == "validation":
+                if split in {"validation", "test"}:
                     target_types.extend(
                         int(value)
                         for value in batch_cell_type_flat.detach().cpu().numpy().tolist()
@@ -682,7 +689,7 @@ def infer(
         "metadata": str(output / "metadata.json"),
         "resolved_config": str(output / "resolved_inference_config.yaml"),
     }
-    if split == "validation":
+    if split in {"validation", "test"}:
         target_values = np.vstack(targets)[selected, :]
         target_table = pd.DataFrame(target_values, columns=checkpoint["genes"])
         target_table.insert(0, "cell_id", cell_ids)
@@ -697,7 +704,7 @@ def infer(
                 "predicted_label": [classes[predicted_types[index]] for index in selected],
             }
         )
-        if split == "validation":
+        if split in {"validation", "test"}:
             type_table.insert(
                 1,
                 "ground_truth_label",
@@ -706,9 +713,8 @@ def infer(
         type_table.to_csv(output / "cell_types.csv", index=False)
         written["cell_types"] = str(output / "cell_types.csv")
 
-    public_slide_id = "slide-" + hashlib.sha256(
-        dataset.slide_id.encode("utf-8")
-    ).hexdigest()[:16]
+    # Each inference run contains one slide; this ID is local to that run.
+    public_slide_id = "slide-1"
     patch_parts = [key.split("|") for key in patch_keys_selected]
     if any(len(parts) != 6 for parts in patch_parts):
         raise RuntimeError("Canonical patch-key parsing failed")
@@ -784,7 +790,7 @@ def validate_inference_data(
     """Read-only preflight for checkpoint-bound validation or prediction data."""
 
     if split not in SUPPORTED_SPLITS:
-        raise ValueError("split must be 'validation' or 'prediction'")
+        raise ValueError("split must be 'validation', 'test', or 'prediction'")
     runtime = _load_inference_config(config)
     _validate_runtime_paths(runtime, split)
     checkpoint_file = Path(checkpoint_path)

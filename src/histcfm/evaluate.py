@@ -1,10 +1,7 @@
-"""Evaluate formal HistCFM inference tables without running the model.
+"""Evaluate aligned HistCFM prediction and target tables.
 
-This release-side evaluator was written on 2026-08-13. It is intentionally
-independent of paper-specific epoch selection, fold aggregation, spatial
-statistics, and plotting. Distributed under GNU GPL version 3 only; see
-``LICENSE``.
-"""
+Reports expression and optional cell-type metrics without running the model.
+Distributed under GNU GPL version 3 only; see LICENSE."""
 
 import csv
 import json

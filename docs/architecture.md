@@ -56,8 +56,8 @@ and uses the mask labels as cell identifiers.
 
 One shared coordinate generator defines both dataset patches and validation
 inventory. Validation patches lie fully inside the configured validation row
-interval; training patches lie fully in its complement and cannot cross that
-interval. Histology normalization is estimated from training patches only and
+interval. Test patches lie inside `data.test_split` when configured. Training
+patches lie fully outside both held-out intervals and cannot cross their boundaries. Histology normalization is estimated from training patches only and
 stored with the training run for reuse during inference.
 
 The complete file, identifier, coordinate, gene-order, split, and canonical-key
@@ -111,10 +111,11 @@ endpoint-expression, semantic-hint, SONRM, and configured auxiliary losses.
 It writes a resolved configuration, normalization artifact, loss records, and
 schema-versioned checkpoints to a new or empty output directory.
 
-The validation split is enumerated and checked before training so held-out
-patches, labels, genes, and feature keys are valid. Version `0.1.1` does not run
-a validation forward pass, select a best epoch, or choose a checkpoint from
-validation metrics. Evaluation is a separate explicit workflow.
+The validation split is checked before training. After every epoch, validation
+inference uses a fixed seed and computes mean finite gene PCC. The best score
+selects `best_val.pth`; ties retain the earliest epoch. Training RNG states are
+restored after validation. Test evaluation is a separate explicit workflow and
+does not participate in checkpoint selection.
 
 ## S-step inference
 
@@ -156,18 +157,11 @@ epoch or implement paper-specific figure and fold aggregation workflows.
   its current attention operation does not index or aggregate that graph;
   centroid coordinates still enter the learned key representation.
 
-These behaviors are part of the documented `0.1.1` implementation. Changing
+These behaviors are part of the documented model implementation. Changing
 them would require an explicit model revision and renewed numerical validation.
 
-## Validation status and scope
+## Synthetic demo
 
-HistCFM `0.1.1` passed all 75 automated tests and the complete committed
-synthetic validate/train/checkpoint/infer/evaluate workflow in the independent
-Linux/CUDA environment documented in [server_validation.md](server_validation.md).
-That run covered six training patches, four validation patches, strict
-schema-3 checkpoint reload, inference for 36 cells and 24 genes, evaluation,
-strict JSON, and output-order checks.
-
-The synthetic workflow verifies software integration only. It is not a paper
-benchmark, biological result, validation on every supported dataset, or claim
-of bitwise identity across hardware and dependency versions.
+The demo exercises training, validation-based checkpoint selection and separate
+Test scoring. It is not a paper benchmark or a biological result. See the
+[demo guide](../examples/demo/README.md).

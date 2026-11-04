@@ -1,10 +1,7 @@
-"""Strict formal configuration for HistCFM.
+"""Strict YAML configuration for HistCFM.
 
-This module was written during the 2026-08-12 release reorganization. It does
-not read research repositories, data, or environment variables and does not
-instantiate the model. YAML parsing is performed only when ``load_config`` is
-called. Distributed under GNU GPL version 3 only; see ``LICENSE``.
-"""
+Configuration parsing does not instantiate the model.
+Distributed under GNU GPL version 3 only; see LICENSE."""
 
 import math
 from dataclasses import asdict, dataclass, field
@@ -81,6 +78,7 @@ class DataConfig:
     genes: List[str] = field(default_factory=list)
     cell_types: List[str] = field(default_factory=list)
     validation_split: List[float] = field(default_factory=lambda: [0.0, 0.2])
+    test_split: Optional[List[float]] = None
     patch_height: int = 256
     patch_width: int = 256
     overlap: int = 30
@@ -115,6 +113,17 @@ class DataConfig:
         ]
         if any(item > 1.0 for item in result.validation_split):
             raise ValueError("data.validation_split values must be <= 1")
+        if result.test_split is not None:
+            if not isinstance(result.test_split, list) or len(result.test_split) != 2:
+                raise ValueError("data.test_split must contain two fractions")
+            result.test_split = [_float(x, "data.test_split", 0.0) for x in result.test_split]
+            for name, bounds in (("test_split", result.test_split), ("validation_split", result.validation_split)):
+                if not 0 <= bounds[0] < bounds[1] <= 1:
+                    raise ValueError(f"data.{name} must be an increasing interval in [0, 1]")
+            a, b = result.validation_split
+            c, d = result.test_split
+            if max(a, c) < min(b, d):
+                raise ValueError("Validation and test intervals overlap")
         result.patch_height = _int(result.patch_height, "data.patch_height", 1)
         result.patch_width = _int(result.patch_width, "data.patch_width", 1)
         result.overlap = _int(result.overlap, "data.overlap", 0)

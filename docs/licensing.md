@@ -18,14 +18,9 @@ the GPL's full terms, including applicable source, license, notice, change-
 marking, and warranty-disclaimer requirements. The repository does not add a
 non-commercial restriction to the HistCFM software license.
 
-The official GHIST source used for comparison was
-[SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST), default branch `main`,
-at commit `917456be305fc82e92293ea272812e79675e821c`. The closest official
-content match for the priority local GHIST files begins at commit
-`14bf60f92fadab6985e5c3f9649760f63798cd75`; those paths were unchanged through
-the audited commit. GHIST publishes the GNU GPL version 3 in its root
-`LICENSE`, which is the redistribution basis recorded for GHIST-derived code
-in HistCFM.
+The upstream source is [SydneyBioX/GHIST](https://github.com/SydneyBioX/GHIST).
+GHIST publishes the GNU GPL version 3 in its root `LICENSE`, which is the
+redistribution basis recorded for GHIST-derived code in HistCFM.
 
 ## HistCFM-specific contributions
 

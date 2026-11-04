@@ -47,10 +47,31 @@ def split_row_intervals(
     image_height: int,
     validation_division: Sequence[float],
     mode: str,
+    test_division=None,
 ) -> Tuple[Interval, ...]:
     """Return contiguous row intervals for one strict train/validation split."""
 
     start, stop = validation_pixel_interval(image_height, validation_division)
+    if test_division is not None:
+        test_start, test_stop = validation_pixel_interval(image_height, test_division)
+        if max(start, test_start) < min(stop, test_stop):
+            raise ValueError("Validation and test intervals overlap")
+        if mode == "test":
+            return ((test_start, test_stop),)
+        if mode == "train":
+            boundaries = sorted([(start, stop), (test_start, test_stop)])
+            intervals, cursor = [], 0
+            for lo, hi in boundaries:
+                if cursor < lo:
+                    intervals.append((cursor, lo))
+                cursor = hi
+            if cursor < image_height:
+                intervals.append((cursor, image_height))
+            if not intervals:
+                raise ValueError("Validation and test leave no training rows")
+            return tuple(intervals)
+    elif mode == "test":
+        raise ValueError("Test inference requires data.test_split")
     if mode in {"validation", "val", "prediction", "predict"}:
         return ((start, stop),)
     if mode != "train":
@@ -98,6 +119,7 @@ def build_split_patch_coordinates(
     patch_width: int,
     overlap: int,
     mode: str,
+    test_division=None,
 ) -> Tuple[Coordinate, ...]:
     """Build fixed-size patches wholly inside one spatial split.
 
@@ -115,7 +137,7 @@ def build_split_patch_coordinates(
         raise ValueError("image dimensions must be positive")
     if patch_height > height or patch_width > width:
         raise ValueError("Patch dimensions must not exceed histology dimensions")
-    if mode not in {"train", "validation", "val", "prediction", "predict"}:
+    if mode not in {"train", "validation", "val", "prediction", "predict", "test"}:
         raise ValueError("mode must be train, validation/val, or prediction/predict")
     validation_start, validation_stop = validation_pixel_interval(
         height, validation_division
@@ -127,7 +149,7 @@ def build_split_patch_coordinates(
         )
     train_intervals = ()
     if mode not in {"prediction", "predict"}:
-        train_intervals = split_row_intervals(height, validation_division, "train")
+        train_intervals = split_row_intervals(height, validation_division, "train", test_division)
         if not any(stop - start >= patch_height for start, stop in train_intervals):
             raise ValueError(
                 "Training complement is too small for one full-height patch: "
@@ -141,7 +163,7 @@ def build_split_patch_coordinates(
     row_intervals = (
         train_intervals
         if normalized_mode == "train"
-        else ((validation_start, validation_stop),)
+        else split_row_intervals(height, validation_division, mode, test_division)
     )
     row_starts = []
     for start, stop in row_intervals:
@@ -158,3 +180,15 @@ def build_split_patch_coordinates(
         for row_start in row_starts
         for column_start in column_starts
     )
+
+
+def partition_cell_ids(mask, intervals):
+    """Assign each nucleus once by its whole-mask row centroid (half-open strips)."""
+    import numpy as np
+    ys, xs = np.nonzero(mask)
+    labels, inverse = np.unique(mask[ys, xs], return_inverse=True)
+    centroids = np.bincount(inverse, weights=ys) / np.bincount(inverse)
+    selected = np.zeros(len(labels), dtype=bool)
+    for lo, hi in intervals:
+        selected |= (centroids >= lo) & (centroids < hi)
+    return set(labels[selected].tolist())

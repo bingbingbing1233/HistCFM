@@ -14,6 +14,7 @@ from .image_io import load_image
 from .splitting import (
     build_split_patch_coordinates,
     split_row_intervals,
+    partition_cell_ids,
     validation_pixel_interval,
 )
 
@@ -115,13 +116,14 @@ def inspect_patch_inventory(
     min_nucleus_area: float,
     mode: str,
     require_cell_types: bool,
+    test_division=None,
 ) -> PatchInventory:
     """Derive train/validation patch keys without normalization or file writes."""
 
     import numpy as np
     import pandas as pd
 
-    if mode not in {"train", "validation"}:
+    if mode not in {"train", "validation", "test"}:
         raise ValueError("Patch inventory mode must be 'train' or 'validation'")
     histology = load_image(histology_path)
     mask = load_image(nucleus_mask_path)
@@ -131,11 +133,12 @@ def inspect_patch_inventory(
     if int(overlap) < 0 or int(overlap) >= min(int(patch_height), int(patch_width)):
         raise ValueError("Patch overlap must be smaller than each patch dimension")
     validate_split_nonempty(height, validation_division)
-    row_intervals = split_row_intervals(height, validation_division, mode)
+    row_intervals = split_row_intervals(height, validation_division, mode, test_division)
     coordinates = build_split_patch_coordinates(
         image_height=height,
         image_width=width,
         validation_division=validation_division,
+        test_division=test_division,
         patch_height=patch_height,
         patch_width=patch_width,
         overlap=overlap,
@@ -163,6 +166,8 @@ def inspect_patch_inventory(
             np.unique(mask[start:stop, :]).astype(np.int64).tolist()
         )
     selected_ids.discard(0)
+    if test_division is not None:
+        selected_ids = partition_cell_ids(mask, row_intervals)
     eligible &= selected_ids
     slide_id = Path(histology_path).stem
     keys = []

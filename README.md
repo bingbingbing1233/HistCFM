@@ -1,5 +1,9 @@
 # HistCFM
 
+## v0.1.2
+
+v0.1.2 更新 demo 的空间条带划分，设置独立的训练集、验证集和测试集，并通过验证集选择最佳 epoch 后进行测试集评估。demo 使用适配小尺寸合成图像的 1:1:1 划分，正式实验采用 7:1:2 划分。
+
 ## Paper
 
 **HistCFM: Semantics-Guided Conditional Flow Matching for Single-Cell Spatial Gene Expression Prediction from Histology**
@@ -7,6 +11,14 @@
 HistCFM is a cell-level histology-to-gene-expression framework that integrates tissue morphology, spatial-neighborhood information, and conditional flow matching. It operates on processed cell-level inputs and precomputed morphology features.
 
 The repository provides installation instructions, documented command-line workflows for training, inference, and evaluation, and a fully synthetic end-to-end example for verifying the software pipeline.
+
+## Demo workflow
+
+The synthetic demo uses three equal spatial strips for Train, Val and Test.
+It trains for three epochs, selects the earliest epoch with the highest Val
+mean gene PCC, and evaluates Test separately using `best_val.pth`.
+See the [demo guide](examples/demo/README.md) for commands and outputs.
+This repository update does not include the formal 7:1:2 experiment package.
 
 ## Overview
 
@@ -51,14 +63,14 @@ histcfm train \
 
 histcfm validate-data \
   --mode infer \
-  --split validation \
+  --split test \
   --config configs/demo.yaml \
-  --checkpoint outputs/demo/train/checkpoints/epoch_1.pth
+  --checkpoint outputs/demo/train/checkpoints/best_val.pth
 
 histcfm infer \
-  --split validation \
+  --split test \
   --config configs/demo.yaml \
-  --checkpoint outputs/demo/train/checkpoints/epoch_1.pth \
+  --checkpoint outputs/demo/train/checkpoints/best_val.pth \
   --output-dir outputs/demo/infer
 
 histcfm evaluate \
@@ -126,7 +138,7 @@ The standalone `validate-data` command is a recommended preflight; the formal ru
 
 ## Inference
 
-Run one explicit trusted checkpoint. Use `--split validation` with targets or `--split prediction` for unlabeled inputs:
+Run one explicit trusted checkpoint. Use `--split validation` or `--split test` with scoring targets. `--split test` requires `data.test_split`. Use `--split prediction` for unlabeled inputs in the configured validation region:
 
 ```bash
 histcfm infer \
@@ -136,11 +148,11 @@ histcfm infer \
   --output-dir path/to/inference_run
 ```
 
-Inference reuses the training normalization bound to the checkpoint. The checkpoint-aware preflight is documented in the [server validation guide](docs/server_validation.md).
+Inference reuses the training normalization bound to the checkpoint. Use `histcfm validate-data --mode infer` to check inputs against a checkpoint.
 
 ## Evaluation
 
-Evaluate aligned tables produced by validation inference:
+Evaluate aligned tables produced by validation or test inference:
 
 ```bash
 histcfm evaluate \
@@ -164,15 +176,14 @@ docs/              Detailed preparation and reproducibility guides
 
 ## Reproducibility and scope
 
-- HistCFM `0.1.1` passed all 75 tests and the complete synthetic validate/train/checkpoint/infer/evaluate workflow in the declared independent Linux/CUDA environment.
 - The synthetic demo validates software plumbing only; it is not a paper benchmark or biological result.
 - Real datasets and paper checkpoints are not distributed here.
 - Users prepare real morphology features independently through authorized external-model access.
-- See [environment](docs/environment.md), [server validation](docs/server_validation.md), and [reproducibility](docs/reproducibility.md) for detailed scope.
+- See [environment](docs/environment.md) and [reproducibility](docs/reproducibility.md) for detailed scope.
 
 ## Citation and archival record
 
-Zenodo DOI for this software release:
+Zenodo DOI for the archived v0.1.1 release (not v0.1.2):
 
 [https://doi.org/10.5281/zenodo.21936408](https://doi.org/10.5281/zenodo.21936408)
 

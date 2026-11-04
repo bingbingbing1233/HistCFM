@@ -271,15 +271,15 @@ def _width_starts(overlap: int) -> list[int]:
     return starts
 
 
-def _patch_keys(labels: array) -> tuple[list[str], list[str]]:
+def _patch_keys(labels: array) -> tuple[list[str], list[str], list[str]]:
     eligible = set(range(1, CELL_COUNT + 1))
     train_coordinates = [
         (row, column)
-        for row in (VALIDATION_STOP, VALIDATION_STOP + PATCH_HEIGHT)
+        for row in (0,)
         for column in _width_starts(0)
     ]
     validation_coordinates = [
-        (0, column)
+        (VALIDATION_STOP, column)
         for column in _width_starts(OVERLAP)
     ]
 
@@ -303,13 +303,14 @@ def _patch_keys(labels: array) -> tuple[list[str], list[str]]:
         raise GenerationError("Demo must contain multiple train and validation patches")
     if len(set(train + validation)) != len(train) + len(validation):
         raise GenerationError("Canonical demo patch keys must be unique")
-    return train, validation
+    test = select([(2 * VALIDATION_STOP, c) for c in _width_starts(OVERLAP)])
+    return train, validation, test
 
 
 def _synthetic_features(count: int) -> list[list[float]]:
     rng = random.Random(SEED + 3)
     rows = []
-    fingerprints = set()
+    seen_feature_rows = set()
     for row_index in range(count):
         row = []
         for column_index in range(FEATURE_DIM):
@@ -320,9 +321,9 @@ def _synthetic_features(count: int) -> list[list[float]]:
             row.append(value)
         packed = b"".join(struct.pack("<e", value) for value in row)
         norm_squared = sum(struct.unpack("<e", packed[index : index + 2])[0] ** 2 for index in range(0, len(packed), 2))
-        if norm_squared <= 1e-24 or packed in fingerprints:
+        if norm_squared <= 1e-24 or packed in seen_feature_rows:
             raise GenerationError("Synthetic feature rows must be nonzero and unique")
-        fingerprints.add(packed)
+        seen_feature_rows.add(packed)
         rows.append(row)
     return rows
 
@@ -353,8 +354,8 @@ def generate(output: Path, force: bool) -> dict[str, int]:
     records = _cell_records()
     labels, areas = _draw_mask(records)
     pixels = _render_histology(labels, records)
-    train_keys, validation_keys = _patch_keys(labels)
-    keys = train_keys + validation_keys
+    train_keys, validation_keys, test_keys = _patch_keys(labels)
+    keys = train_keys + validation_keys + test_keys
     features = _synthetic_features(len(keys))
 
     _write_rgb_tiff(output / "histology.tif", pixels)
@@ -371,6 +372,7 @@ def generate(output: Path, force: bool) -> dict[str, int]:
         "cell_types": len(CELL_TYPES),
         "train_patches": len(train_keys),
         "validation_patches": len(validation_keys),
+        "test_patches": len(test_keys),
         "feature_rows": len(keys),
         "feature_dim": FEATURE_DIM,
     }

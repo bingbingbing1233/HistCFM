@@ -19,7 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
     infer_parser.add_argument("--output-dir", required=True, help="New inference output directory")
     infer_parser.add_argument(
         "--split",
-        choices=("validation", "prediction"),
+        choices=("validation", "prediction", "test"),
         default="validation",
         help="Whether supervised targets are available",
     )
@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("--checkpoint", help="Trusted formal inference checkpoint")
     validate_parser.add_argument(
-        "--split", choices=("validation", "prediction"), default="validation"
+        "--split", choices=("validation", "prediction", "test"), default="validation"
     )
     validate_parser.set_defaults(handler=_run_validate_data)
     return parser

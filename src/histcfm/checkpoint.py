@@ -1,11 +1,8 @@
-"""Checkpoint creation for trusted, locally generated HistCFM runs.
+"""Checkpoint creation and loading for trusted HistCFM runs.
 
-This release-side module was written during the 2026-08-12 reorganization; it
-is not a verbatim research file. PyTorch checkpoints use pickle internally and
-must not be loaded from untrusted sources. This stage intentionally provides
-a restricted ``weights_only=True`` loader with no unsafe fallback. Distributed
-under GNU GPL version 3 only; see ``LICENSE``.
-"""
+PyTorch checkpoints use pickle internally. The loader requires
+weights_only=True and provides no unsafe fallback.
+Distributed under GNU GPL version 3 only; see LICENSE."""
 
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence, Union

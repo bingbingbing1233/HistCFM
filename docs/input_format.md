@@ -1,3 +1,5 @@
+> With `data.test_split` set, Train excludes both Val and Test. The demo uses three equal spatial strips; see the [demo guide](../examples/demo/README.md).
+
 # HistCFM-ready input format
 
 HistCFM begins from aligned, preprocessed cell-level inputs. Raw Xenium
@@ -66,11 +68,13 @@ the loader never infers or intersects it.
 - `patch_height` and `patch_width` retain the source `hsize` and `wsize`
   meanings.
 - Training uses zero overlap.
-- Validation and prediction use the configured overlap.
+- Validation, test and prediction use the configured overlap.
 - The validation division is a pair of image-height fractions. Validation
   patches must fit wholly inside that contiguous row interval. Training tiles
-  each contiguous part of its complement independently, so no training patch
-  shares a row with or crosses the validation interval.
+  each contiguous part of its complement independently. When `data.test_split`
+  is set, training excludes both Val and Test intervals. Each patch stays wholly
+  inside its partition. Nuclei in a three-part split are assigned by their
+  whole-mask row centroid, preventing cross-partition supervision.
 - Horizontal patching spans the whole slide and keeps the audited terminal
   patch behavior.
 - A patch is retained when its filtered nucleus mask has a nonzero sum. A split
@@ -82,7 +86,7 @@ The dataset does not create a DataLoader. The audited callers use:
 | Purpose | Shuffle | Drop last | Workers |
 | --- | --- | --- | --- |
 | Training | Configured | Configured | Configured `workers` |
-| Validation/prediction | `False` | `False` | Configured `workers` |
+| Validation/test/prediction | `False` | `False` | Configured `workers` |
 
 These policies are now carried by the formal training and inference entries.
 
@@ -168,9 +172,9 @@ read-only.
 
 `examples/demo/data/` contains a generated 768 x 768 RGB image and aligned
 integer mask, 96 IDs shared exactly by the three cell tables, 24 raw-count
-columns, four string cell types, and ten finite float16 feature rows. The
-configured first-third validation interval produces six training and four
-validation canonical keys. `average_expression_compatibility` is disabled, so
+columns, four string cell types, and eleven finite float16 feature rows.
+Train uses rows [0, 256), Val [256, 512), and Test [512, 768), producing
+three training, four validation, and four test canonical keys. `average_expression_compatibility` is disabled, so
 no `average_expression.csv` or `genes.txt` is present.
 
 The demo feature values are deterministic synthetic precomputed morphology
@@ -181,7 +185,7 @@ the same provenance or redistribution rights.
 
 ## Formal inference inputs and outputs
 
-The `validation` split requires the supervised expression table and, when the checkpoint enables cell types, the cell-type table. The `prediction` split reads no expression or cell-type ground truth. Both require histology, nucleus mask, matched-nuclei table, training normalization, and a complete precomputed UNI store when UNI is enabled. Neither applies training or stain augmentation.
+The `validation` and `test` splits require the supervised expression table and, when the checkpoint enables cell types, the cell-type table. The `prediction` split reads no expression or cell-type ground truth. All three modes require histology, nucleus mask, matched-nuclei table, training normalization, and a complete precomputed UNI store when UNI is enabled. None applies training or stain augmentation. Val/Test labels are used only for scoring and are not passed to the model. Three-part checkpoints require matching Val/Test interval settings at inference.
 
 Runtime input paths may differ from training paths, but checkpoint-bound schema and structure may not: ordered genes, ordered cell types, patch dimensions, maximum cells, expression scale, model/flow structure, inference steps, prior/noise, and UNI/fusion dimensions must match metadata exactly.
 
@@ -195,13 +199,13 @@ The formal output tables are:
 | File | Presence | Columns and scale |
 | --- | --- | --- |
 | `predictions.csv` | Always | `cell_id` then checkpoint genes in exact order; values are `log1p(count)`, obtained by dividing the model-space endpoint by `expression_scale` |
-| `targets.csv` | Validation only | `cell_id` then the same ordered genes; transformed ground truth in `log1p(count)`, never fabricated for prediction |
-| `cell_types.csv` | When the checkpoint enables cell types | `cell_id`, optional validation `ground_truth_label`, and raw-argmax `predicted_label`; no `adjust_pr` postprocessing |
-| `cells.csv` | Always | `cell_id`, stable hashed `slide_id`, numeric patch row/column/height/width/level, and `nucleus_area_pixels`; the internal key's original filename stem is not published |
+| `targets.csv` | Validation and test | `cell_id` then the same ordered genes; transformed ground truth in `log1p(count)`, never fabricated for prediction |
+| `cell_types.csv` | When the checkpoint enables cell types | `cell_id`, optional validation/test `ground_truth_label`, and raw-argmax `predicted_label`; no `adjust_pr` postprocessing |
+| `cells.csv` | Always | `cell_id`, run-local `slide_id`, numeric patch row/column/height/width/level, and `nucleus_area_pixels`; the internal key's original filename stem is not published |
 | `metadata.json` | Always | checkpoint/schema/epoch, seed/split, genes/classes, relative normalization provenance, model/sampling parameters, path-free input identifiers, output scale, and runtime versions |
 | `resolved_inference_config.yaml` | Always | Runtime configuration with external-input placeholders rather than input names/absolute paths and the checkpoint-relative normalization artifact |
 
-Overlapping-patch duplicates are resolved with the source rule: retain the observation with the largest nucleus pixel area, then restore original observation order. A single dataset instance represents one slide, so `cell_id` is stable within that input; `cells.csv` carries a deterministic SHA-256-derived slide pseudonym and numeric patch provenance without exposing an input filename or absolute path.
+Overlapping-patch duplicates are resolved with the source rule: retain the observation with the largest nucleus pixel area, then restore original observation order. A single dataset instance represents one slide, so `cell_id` is stable within that input; `cells.csv` uses the run-local label `slide-1` and numeric patch coordinates without exposing an input filename or absolute path. This label is not a cross-run identifier; when combining outputs from different runs, supply your own distinct slide identifiers.
 
 ## Formal evaluator inputs and outputs
 

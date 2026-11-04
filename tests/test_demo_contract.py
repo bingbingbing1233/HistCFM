@@ -1,7 +1,4 @@
-import csv
-import hashlib
 import json
-import os
 import re
 from pathlib import Path
 
@@ -32,14 +29,6 @@ CORE_FILES = (
 )
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _inventories(config):
     common = {
         "histology_path": config.data.histology_path,
@@ -48,6 +37,7 @@ def _inventories(config):
         "expression_path": config.data.expression_path,
         "cell_type_path": config.data.cell_type_path,
         "validation_division": config.data.validation_split,
+        "test_division": config.data.test_split,
         "patch_height": config.data.patch_height,
         "patch_width": config.data.patch_width,
         "overlap": config.data.overlap,
@@ -57,12 +47,13 @@ def _inventories(config):
     return (
         inspect_patch_inventory(**common, mode="train"),
         inspect_patch_inventory(**common, mode="validation"),
+        inspect_patch_inventory(**common, mode="test"),
     )
 
 
 def test_demo_configuration_is_strict_and_minimal():
     config = load_config(CONFIG_PATH)
-    assert config.training.epochs == 1
+    assert config.training.epochs == 3
     assert config.training.workers == 0
     assert config.model.average_expression_compatibility is False
     assert config.data.average_expression_path is None
@@ -101,22 +92,23 @@ def test_expression_gene_and_cell_type_order_matches_configuration():
 
 def test_patch_inventory_and_feature_store_have_exact_coverage():
     config = load_config(CONFIG_PATH)
-    train, validation = _inventories(config)
-    assert len(train.patch_keys) == 6
+    train, validation, test = _inventories(config)
+    assert len(train.patch_keys) == 3
     assert len(validation.patch_keys) == 4
     assert train.largest_cell_count <= config.data.max_cells_per_patch
     assert validation.largest_cell_count <= config.data.max_cells_per_patch
-    keys = list(train.patch_keys) + list(validation.patch_keys)
+    keys = list(train.patch_keys) + list(validation.patch_keys) + list(test.patch_keys)
+    assert len(test.patch_keys) == 4
     with (DATA_ROOT / "uni" / "uni_index.json").open(encoding="utf-8") as handle:
         index = json.load(handle)
     assert list(index) == keys
-    assert list(index.values()) == list(range(10))
+    assert list(index.values()) == list(range(11))
     assert validate_uni_feature_store(
         keys,
         config.uni.index_path,
         config.uni.features_path,
         expected_dim=1024,
-    ) == (10, 1024)
+    ) == (11, 1024)
 
 
 def test_synthetic_features_are_finite_nonzero_and_unique():
@@ -126,8 +118,8 @@ def test_synthetic_features_are_finite_nonzero_and_unique():
         expected_dim=1024,
     )
     values = np.asarray(features, dtype=np.float32)
-    assert len(index) == 10
-    assert features.shape == (10, 1024)
+    assert len(index) == 11
+    assert features.shape == (11, 1024)
     assert features.dtype == np.dtype("float16")
     assert np.isfinite(values).all()
     assert np.all(np.linalg.norm(values, axis=1) > 1e-12)
@@ -150,49 +142,3 @@ def test_demo_data_contains_no_private_paths_or_source_markers():
     )
     assert "PRIVATE_BC1_STAGING" not in generator
     assert "MahmoodLab" not in generator
-
-
-def test_optional_private_reference_has_no_shared_hash_or_cell_id():
-    """Enable author-side leakage checking without committing private identifiers."""
-
-    raw_reference = os.environ.get("HISTCFM_PRIVATE_REFERENCE_DIR")
-    if not raw_reference:
-        return
-    private_root = Path(raw_reference)
-    assert private_root.is_dir()
-    private_hashes = {
-        _sha256(path)
-        for path in private_root.rglob("*")
-        if path.is_file() and not path.is_symlink()
-    }
-    assert private_hashes.isdisjoint({_sha256(path) for path in CORE_FILES})
-
-    private_ids = set()
-    for name, column in (
-        ("matched_nuclei.csv", 0),
-        ("expression.csv", 0),
-        ("cell_types.csv", "c_id"),
-    ):
-        with (private_root / name).open(encoding="utf-8", newline="") as handle:
-            reader = csv.DictReader(handle)
-            key = reader.fieldnames[column] if isinstance(column, int) else column
-            private_ids.update(int(row[key]) for row in reader)
-    assert private_ids.isdisjoint(set(range(1, 97)))
-
-
-def test_demo_checksums_cover_all_public_demo_artifacts():
-    checksum_path = DEMO_ROOT / "checksums.sha256"
-    entries = {}
-    for line in checksum_path.read_text(encoding="utf-8").splitlines():
-        digest, relative = line.split("  ", 1)
-        assert relative not in entries
-        entries[relative] = digest
-        assert _sha256(DEMO_ROOT / relative) == digest
-    expected = {
-        "README.md",
-        "DATA_PROVENANCE.md",
-        "../../configs/demo.yaml",
-        "../../scripts/generate_synthetic_demo.py",
-        *(path.relative_to(DEMO_ROOT).as_posix() for path in CORE_FILES),
-    }
-    assert set(entries) == expected

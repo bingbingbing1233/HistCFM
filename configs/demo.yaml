@@ -38,7 +38,8 @@ data:
     - synthetic_type_b
     - synthetic_type_c
     - synthetic_type_d
-  validation_split: [0.0, 0.3333333333333333]
+  validation_split: [0.3333333333333333, 0.6666666666666666]
+  test_split: [0.6666666666666666, 1.0]
   patch_height: 256
   patch_width: 256
   overlap: 32
@@ -97,7 +98,7 @@ loss:
   sonrm: 0.05
 
 training:
-  epochs: 1
+  epochs: 3
   batch_size: 1
   workers: 0
   shuffle: false
